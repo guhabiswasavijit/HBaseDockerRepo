@@ -1,0 +1,33 @@
+FROM dockette/jdk8:latest
+LABEL maintainer="Avijit GuhaBiswas <guhabiswas.avijit@gmail.com>"
+LABEL name="admin/hbase-jdk8"
+
+RUN apk add --no-cache bash wget openssh-server openssh-client vim sudo curl tar openrc\
+    && adduser --disabled-password --home /home/admin --shell /bin/bash admin\
+	&& echo 'admin ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
+	
+USER root
+RUN echo "root:root" | chpasswd
+RUN mkdir -p /opt/bin
+RUN mkdir -p /opt/logs
+ENV JAVA_HOME=/usr/lib/jvm/default-jvm
+ENV PATH $JAVA_HOME/bin:$PATH
+
+
+	
+RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
+    chmod 0600 ~/.ssh/authorized_keys
+
+
+WORKDIR /opt/bin
+ADD target/hbase_client-0.0.1-SNAPSHOT-jar-with-dependencies.jar hbase_client-0.0.1.jar
+
+
+EXPOSE 22
+
+
+
+CMD rc-service sshd start\
+    && java -jar hbase_client-0.0.1.jar
+
